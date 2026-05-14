@@ -51,7 +51,7 @@ public class RouterItem extends Item {
         }
 
         pathPos.add(pointer.immutable());
-        return pathPos.subList(0, Math.min(32, pathPos.size()));
+        return pathPos;
     }
 
     public static void placePathPos(
@@ -133,6 +133,12 @@ public class RouterItem extends Item {
             )
         ) return InteractionResultHolder.fail(stack);
         List<BlockPos> pathPosList = new ArrayList<>(pathPosSet);
+        pathPosList = pathPosList.subList(
+            0,
+            player.isCreative()
+                ? pathPosList.size()
+                : Math.min(pathPosList.size(), Math.min(64, offStack.getCount()))
+        );
         placePathPos(level, player, pipeblock, pathPosList);
         nbt.remove("points");
         nbt.remove("block");
@@ -219,14 +225,19 @@ public class RouterItem extends Item {
             pathPosSet.addAll(
                 findPathPos(NbtUtils.readBlockPos(points.getCompound(points.size() - 1)), hitPos)
             );
-            List<BlockPos> fullPath = new ArrayList<>(pathPosSet);
-
-            for (int i = 0; i < fullPath.size(); i++) {
-                BlockPos curr = fullPath.get(i);
+            List<BlockPos> pathPosList = new ArrayList<>(pathPosSet);
+            pathPosList = pathPosList.subList(
+                0,
+                player.isCreative()
+                    ? pathPosList.size()
+                    : Math.min(pathPosList.size(), Math.min(64, player.getOffhandItem().getCount()))
+            );
+            for (int i = 0; i < pathPosList.size(); i++) {
+                BlockPos curr = pathPosList.get(i);
                 int cm = 0;
                 int bm = 0;
-                if (i < fullPath.size() - 1) {
-                    BlockPos delta = fullPath.get(i + 1).subtract(curr);
+                if (i < pathPosList.size() - 1) {
+                    BlockPos delta = pathPosList.get(i + 1).subtract(curr);
                     cm |=
                         1 <<
                         Direction.getNearest(delta.getX(), delta.getY(), delta.getZ()).ordinal();
@@ -235,7 +246,7 @@ public class RouterItem extends Item {
                         Direction.getNearest(delta.getX(), delta.getY(), delta.getZ()).ordinal();
                 }
                 if (i > 0) {
-                    BlockPos delta = fullPath.get(i - 1).subtract(curr);
+                    BlockPos delta = pathPosList.get(i - 1).subtract(curr);
                     cm |=
                         1 <<
                         Direction.getNearest(delta.getX(), delta.getY(), delta.getZ()).ordinal();
